@@ -14,9 +14,9 @@ import { writeFile } from "node:fs/promises"
 import { formatDate } from "../helpers/datetime-helper"
 
 export default class Withdraw extends Command {
-  static description = "describe the command here"
+  static description = "load test of withdrawal"
 
-  static examples = ["<%= config.bin %> <%= command.id %>"]
+  static examples = ["oex withdrawal 0xe7a7399d65b92667fa114a3ea7d0ded38c43c1728071abb3cd1f951ecab413eb -c 25"]
 
   static args = [{ name: "primaryKey", require: true }]
 
