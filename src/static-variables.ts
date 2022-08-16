@@ -6,6 +6,7 @@ export const MAINNET_ST_CELO_ADDRESS = "0xC668583dcbDc9ae6FA3CE46462758188adfdfC
 export const MAINNET_HTTP_URL = "https://forno.celo.org"
 export const MAINNET_ACCOUNT_WITH_CELO = "0x7E71FB21D0B30F5669f8F387D4A1114294F8E418"
 export const MAINNET_BACKEND = "https://us-central1-staked-celo-bot.cloudfunctions.net/mainnet-functions"
+export const MAINNET_WITHDRAWAL_TIMEOUT = 72 // in hours
 
 // Alfajores
 export const ALFAJORES_ACCOUNT_CONTRACT_ADDRESS = "0x668dDc8748532CF3e3B6f31951AeEE938a34D564"
@@ -15,3 +16,4 @@ export const ALFAJORES_ST_CELO_ADDRESS = "0x31224718fbB18d72613e5BFdBF7c2477082A
 export const ALFAJORES_HTTP_URL = "https://alfajores-forno.celo-testnet.org"
 export const ALFAJORES_ACCOUNT_WITH_CELO = "0x7E71FB21D0B30F5669f8F387D4A1114294F8E418"
 export const ALFAJORES_MAINNET_BACKEND = "https://us-central1-staked-celo-bot.cloudfunctions.net/alfajores-functions"
+export const ALFAJORES_WITHDRAWAL_TIMEOUT = 6 // in hours

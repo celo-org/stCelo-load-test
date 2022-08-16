@@ -5,7 +5,7 @@ describe("withdraw", () => {
     .stdout()
     .command([
       "withdraw",
-      "INSERT_YOUR_PRIVATE_KEY",
+      "0c9d867bea2e2312309b85593f50c38f405ed1c0ca97e8fff892e11186cf1019",
     ])
     .timeout(99999999)
     .it("runs withdrawal", (ctx) => {

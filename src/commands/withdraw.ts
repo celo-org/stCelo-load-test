@@ -11,7 +11,7 @@ import {
 } from "../helpers/kit-helpers"
 import { setVariablesBasedOnCurrentNetwork } from "../helpers/network-selector"
 import { writeFile } from "node:fs/promises"
-import { formatDate } from "../helpers/datetime-helper"
+import { formatDate } from "../helpers/filename-helper"
 
 export default class Withdraw extends Command {
   static description = "load test of withdrawal"

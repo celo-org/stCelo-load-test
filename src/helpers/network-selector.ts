@@ -4,15 +4,17 @@ import {
   ALFAJORES_MANAGER_CONTRACT_ADDRESS,
   ALFAJORES_ST_CELO_ADDRESS,
   ALFAJORES_ACCOUNT_WITH_CELO,
+  ALFAJORES_CELO_ADDRESS,
+  ALFAJORES_MAINNET_BACKEND,
+  ALFAJORES_WITHDRAWAL_TIMEOUT,
   MAINNET_ACCOUNT_CONTRACT_ADDRESS,
   MAINNET_HTTP_URL,
   MAINNET_MANAGER_CONTRACT_ADDRESS,
   MAINNET_ST_CELO_ADDRESS,
   MAINNET_ACCOUNT_WITH_CELO,
-  ALFAJORES_CELO_ADDRESS,
   MAINNET_CELO_ADDRESS,
   MAINNET_BACKEND,
-  ALFAJORES_MAINNET_BACKEND,
+  MAINNET_WITHDRAWAL_TIMEOUT,
 } from "../static-variables"
 
 export interface NetworkSettings {
@@ -23,6 +25,7 @@ export interface NetworkSettings {
   accountWithCelo: string
   celoContractAddress: string
   backend: string
+  withdrawalTimeout: number
 }
 
 export let networkSettings: NetworkSettings
@@ -49,6 +52,7 @@ function setMainnetVariables() {
     accountWithCelo: MAINNET_ACCOUNT_WITH_CELO,
     celoContractAddress: MAINNET_CELO_ADDRESS,
     backend: MAINNET_BACKEND,
+    withdrawalTimeout: MAINNET_WITHDRAWAL_TIMEOUT,
   }
 }
 
@@ -61,5 +65,6 @@ function setAlfajoresVariables() {
     accountWithCelo: ALFAJORES_ACCOUNT_WITH_CELO,
     celoContractAddress: ALFAJORES_CELO_ADDRESS,
     backend: ALFAJORES_MAINNET_BACKEND,
+    withdrawalTimeout: ALFAJORES_WITHDRAWAL_TIMEOUT,
   }
 }
