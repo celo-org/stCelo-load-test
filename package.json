@@ -8,6 +8,7 @@
   },
   "license": "MIT",
   "main": "dist/index.js",
+  "repository": "https://github.com/celo-org/stCelo-load-test",
   "files": [
     "/bin",
     "/dist",
