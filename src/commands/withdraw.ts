@@ -2,7 +2,7 @@ import { Command, Flags } from "@oclif/core"
 import dateFormat from "dateformat"
 import { Account } from "web3-core"
 import { activateAndVote, withdrawStCelo } from "../helpers/backend-helper"
-import { getManagerContract } from "../helpers/contract-helpers"
+import { getManagerContract, getStCeloContract } from "../helpers/contract-helpers"
 import {
   addKitAccount,
   checkBalance,
@@ -120,13 +120,27 @@ export default class Withdraw extends Command {
     const depositTransactions = await Promise.all(depositTransactionPromises)
     await Promise.all(depositTransactions.map((k) => k.waitReceipt()))
 
-    const withdrawalPromises = accounts.map((a) =>
+    await activateAndVote((message) => this.log(message))
+
+    const stCeloContract = getStCeloContract(kit)
+
+    const withdrawTransactionPromises = accounts.map(async (a) => {
+      const balanceOfStCelo = await stCeloContract.methods.balanceOf(a.address).call()
+      const txObjectWithdraw = managerContract.methods.withdraw(balanceOfStCelo)
+      this.log(`Withdrawing ${balanceOfStCelo} stCELO to ${a.address} for CELO`)
+      return kit.sendTransactionObject(txObjectWithdraw, {
+        from: a.address,
+      })
+    })
+
+    const withdrawTransactions = await Promise.all(withdrawTransactionPromises)
+    await Promise.all(withdrawTransactions.map((k) => k.waitReceipt()))
+
+    const withdrawalBackendPromises = accounts.map((a) =>
       withdrawStCelo(a.address, (message) => this.log(message))
     )
 
-    await Promise.all(withdrawalPromises)
-
-    await activateAndVote(message => this.log(message))
+    await Promise.all(withdrawalBackendPromises)
 
     const now = new Date()
     await writeFile(

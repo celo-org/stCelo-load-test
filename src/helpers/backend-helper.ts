@@ -10,7 +10,7 @@ export async function withdrawStCelo(
     beneficiary: beneficiary,
   }
 
-  log(`Calling withdrawal with account ${beneficiary}`)
+  log(`Calling backend withdrawal with account ${beneficiary}`)
 
   const response = await fetch(networkSettings.backendUrl, {
     method: "post",
@@ -18,7 +18,7 @@ export async function withdrawStCelo(
     headers: { "Content-Type": "application/json" },
   })
   if (!response.ok) {
-    log(`Error calling withdrawal with account ${beneficiary} ${response.status} ${JSON.stringify(response)}`)
+    log(`Error calling backend withdrawal with account ${beneficiary} ${response.status} ${JSON.stringify(response)}`)
     throw new Error(JSON.stringify(response))
   }
 
@@ -34,7 +34,7 @@ export async function claimCelo(
     beneficiary: beneficiary,
   }
 
-  log(`Calling claim with account ${beneficiary}`)
+  log(`Calling backend claim with account ${beneficiary}`)
 
   const response = await fetch(networkSettings.backendUrl, {
     method: "post",
@@ -42,7 +42,7 @@ export async function claimCelo(
     headers: { "Content-Type": "application/json" },
   })
   if (!response.ok) {
-    log(`Error calling claim with account ${beneficiary} ${response.status} ${JSON.stringify(response)}`)
+    log(`Error calling backend claim with account ${beneficiary} ${response.status} ${JSON.stringify(response)}`)
     throw new Error(JSON.stringify(response))
   }
 
@@ -56,7 +56,7 @@ export async function activateAndVote(
     type: "activate",
   }
 
-  log("Calling activate")
+  log("Calling backend activate")
 
   const response = await fetch(networkSettings.backendUrl, {
     method: "post",
@@ -64,7 +64,7 @@ export async function activateAndVote(
     headers: { "Content-Type": "application/json" },
   })
   if (!response.ok) {
-    log(`Error calling activate ${response.status} ${JSON.stringify(response)}`)
+    log(`Error calling backend activate ${response.status} ${JSON.stringify(response)}`)
     throw new Error(JSON.stringify(response))
   }
 

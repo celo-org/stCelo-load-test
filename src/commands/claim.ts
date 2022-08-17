@@ -1,12 +1,12 @@
 import { Command, Flags } from "@oclif/core"
 import { claimCelo } from "../helpers/backend-helper"
 import {
-  networkSettings,
   setVariablesBasedOnCurrentNetwork,
 } from "../helpers/network-selector"
 import { readFile } from "node:fs/promises"
 import { FileContent } from "../interfaces/file-content"
-import { addHours } from "../helpers/datetime-helpers"
+import { getAccountContract } from "../helpers/contract-helpers"
+import { createKit } from "../helpers/kit-helpers"
 
 export default class Claim extends Command {
   static description = "load test of claim"
@@ -34,18 +34,47 @@ export default class Claim extends Command {
 
     setVariablesBasedOnCurrentNetwork(network)
 
+    const kit = createKit()
+
     this.log(`Network: ${network}`)
 
+    const accountContract = getAccountContract(kit)
+
+    const getPendingWithDrawalsCallsPromises = fileContent.accounts.map(
+      async (a) => {
+        kit.addAccount(a.privateKey)
+        const res = await accountContract.methods
+          .getPendingWithdrawals(a.address)
+          .call({
+            from: a.address,
+          })
+        const highestTimestamp = [...res.timestamps].sort().slice(-1)[0]
+        return { ...res, address: a.address, highestTimestamp: new Date((highestTimestamp ?? 0) * 1000) }
+      },
+    )
+
+    const getPendingWithDrawalsCalls = await Promise.all(
+      getPendingWithDrawalsCallsPromises
+    )
+
+    const now = new Date()
+    const accountsWithoutPendingWithdrawals = getPendingWithDrawalsCalls
+      .filter((r) => r.highestTimestamp > now)
+      .map((r) => r.address)
+
     if (
-      addHours(networkSettings.withdrawalTimeout, new Date(fileContent.timestamp)) >
-        new Date()
+      accountsWithoutPendingWithdrawals.length > 0
     ) {
-      const msg = `These accounts cannot claim stCELO yet since network claim timeout is ${networkSettings.withdrawalTimeout} hours`
+      const msg = `These accounts cannot claim stCELO since they have no pending withdrawals ${JSON.stringify(
+        accountsWithoutPendingWithdrawals
+      )}`
       this.log(msg)
       throw new Error(msg)
     }
 
-    const claimPromises = fileContent.accounts.map(a => claimCelo(a.address, message => this.log(message)))
+    const claimPromises = fileContent.accounts.map((a) =>
+      claimCelo(a.address, (message) => this.log(message))
+    )
 
     await Promise.all(claimPromises)
 
