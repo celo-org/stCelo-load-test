@@ -7,14 +7,14 @@ import {
   ALFAJORES_CELO_ADDRESS,
   ALFAJORES_MAINNET_BACKEND,
   ALFAJORES_WITHDRAWAL_TIMEOUT,
-  MAINNET_ACCOUNT_CONTRACT_ADDRESS,
-  MAINNET_HTTP_URL,
-  MAINNET_MANAGER_CONTRACT_ADDRESS,
-  MAINNET_ST_CELO_ADDRESS,
-  MAINNET_ACCOUNT_WITH_CELO,
-  MAINNET_CELO_ADDRESS,
-  MAINNET_BACKEND,
-  MAINNET_WITHDRAWAL_TIMEOUT,
+  ACCOUNT_CONTRACT_ADDRESS,
+  HTTP_URL,
+  MANAGER_CONTRACT_ADDRESS,
+  ST_CELO_ADDRESS,
+  ACCOUNT_WITH_CELO,
+  CELO_ADDRESS,
+  BACKEND_URL,
+  WITHDRAWAL_TIMEOUT,
 } from "../static-variables"
 
 export interface NetworkSettings {
@@ -24,7 +24,7 @@ export interface NetworkSettings {
   stCeloContractAddress: string
   accountWithCelo: string
   celoContractAddress: string
-  backend: string
+  backendUrl: string
   withdrawalTimeout: number
 }
 
@@ -45,14 +45,14 @@ export function setVariablesBasedOnCurrentNetwork(network: string) {
 
 function setMainnetVariables() {
   networkSettings = {
-    accountContractAddress: MAINNET_ACCOUNT_CONTRACT_ADDRESS,
-    managerContractAddress: MAINNET_MANAGER_CONTRACT_ADDRESS,
-    stCeloContractAddress: MAINNET_ST_CELO_ADDRESS,
-    httpUrl: MAINNET_HTTP_URL,
-    accountWithCelo: MAINNET_ACCOUNT_WITH_CELO,
-    celoContractAddress: MAINNET_CELO_ADDRESS,
-    backend: MAINNET_BACKEND,
-    withdrawalTimeout: MAINNET_WITHDRAWAL_TIMEOUT,
+    accountContractAddress: ACCOUNT_CONTRACT_ADDRESS,
+    managerContractAddress: MANAGER_CONTRACT_ADDRESS,
+    stCeloContractAddress: ST_CELO_ADDRESS,
+    httpUrl: HTTP_URL,
+    accountWithCelo: ACCOUNT_WITH_CELO,
+    celoContractAddress: CELO_ADDRESS,
+    backendUrl: BACKEND_URL,
+    withdrawalTimeout: WITHDRAWAL_TIMEOUT,
   }
 }
 
@@ -64,7 +64,7 @@ function setAlfajoresVariables() {
     httpUrl: ALFAJORES_HTTP_URL,
     accountWithCelo: ALFAJORES_ACCOUNT_WITH_CELO,
     celoContractAddress: ALFAJORES_CELO_ADDRESS,
-    backend: ALFAJORES_MAINNET_BACKEND,
+    backendUrl: ALFAJORES_MAINNET_BACKEND,
     withdrawalTimeout: ALFAJORES_WITHDRAWAL_TIMEOUT,
   }
 }

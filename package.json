@@ -6,10 +6,8 @@
   "bin": {
     "load-test": "./bin/run"
   },
-  "homepage": "https://github.com/cli/hello-world",
   "license": "MIT",
   "main": "dist/index.js",
-  "repository": "cli/hello-world",
   "files": [
     "/bin",
     "/dist",
@@ -23,16 +21,18 @@
     "@oclif/core": "^1",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.0.1",
+    "dateformat": "4.6.3",
     "node-fetch": "2",
     "web3": "^1.7.5",
     "web3-core": "^1.7.5"
   },
   "devDependencies": {
-    "@types/node-fetch": "2",
     "@oclif/test": "^2",
     "@types/chai": "^4",
+    "@types/dateformat": "^5.0.0",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.9.4",
+    "@types/node-fetch": "2",
     "chai": "^4",
     "eslint": "^7.32.0",
     "eslint-config-oclif": "^4",
@@ -53,12 +53,7 @@
       "@oclif/plugin-help",
       "@oclif/plugin-plugins"
     ],
-    "topicSeparator": " ",
-    "topics": {
-      "hello": {
-        "description": "Say hello to the world and others"
-      }
-    }
+    "topicSeparator": " "
   },
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",

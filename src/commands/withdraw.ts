@@ -1,7 +1,7 @@
-import { CeloTxReceipt } from "@celo/connect"
 import { Command, Flags } from "@oclif/core"
+import dateFormat from "dateformat"
 import { Account } from "web3-core"
-import { withdrawStCelo } from "../helpers/backend-helper"
+import { activateAndVote, withdrawStCelo } from "../helpers/backend-helper"
 import { getManagerContract } from "../helpers/contract-helpers"
 import {
   addKitAccount,
@@ -11,32 +11,35 @@ import {
 } from "../helpers/kit-helpers"
 import { setVariablesBasedOnCurrentNetwork } from "../helpers/network-selector"
 import { writeFile } from "node:fs/promises"
-import { formatDate } from "../helpers/filename-helper"
+import { FileContent } from "../interfaces/file-content"
 
 export default class Withdraw extends Command {
   static description = "load test of withdrawal"
 
-  static examples = ["oex withdrawal 0xe7a7399d65b92667fa114a3ea7d0ded38c43c1728071abb3cd1f951ecab413eb -c 25"]
+  static examples = ["load-test withdrawal <primary_key> -c 25"]
 
   static args = [{ name: "primaryKey", require: true }]
 
   static flags = {
     count: Flags.string({
       char: "c",
-      description: "count of parallel requests - default 10",
+      description: "count of parallel requests",
+      default: "10",
     }),
     amount: Flags.string({
       char: "a",
-      description: "amount of CELO to transfer to each account - default 0.01",
+      description: "amount of CELO to transfer to each account",
+      default: "0.01",
     }),
     network: Flags.string({
       char: "n",
-      description: "CELO network - default alfajores",
+      description: "CELO network",
+      default: "alfajores",
     }),
     gas: Flags.string({
       char: "g",
-      description:
-        "extra amount of CELO to transfer to each account (as gas) - default 0.001",
+      description: "extra amount of CELO to transfer to each account (as gas) ",
+      default: "0.001",
     }),
   }
 
@@ -51,88 +54,92 @@ export default class Withdraw extends Command {
 
     const kit = createKit()
     const primaryAccount = addKitAccount(kit, args.primaryKey)
+    const gas = Number.parseFloat(flags.gas ?? "0.001")
 
     this.log(`Network: ${network}`)
     this.log(`Count of parallel requests: ${countOfParallelism}`)
     this.log(`Amount of CELO to be transfered to each account: ${amountOfCelo}`)
     this.log(`Primary account: ${primaryAccount}`)
+    this.log(`Extra CELO as gas sent: ${gas}`)
 
     await checkBalance(
       kit,
       primaryAccount,
-      Number.parseFloat(amountOfCelo) * countOfParallelism,
-      message => this.log(message),
+      Number.parseFloat(amountOfCelo + gas) * countOfParallelism,
+      (message) => this.log(message)
     )
 
     const accountPromises: Promise<Account>[] = []
 
     for (let i = 0; i < countOfParallelism; i++) {
-      accountPromises.push(createAccount(kit, message => this.log(message)))
+      accountPromises.push(createAccount(kit, (message) => this.log(message)))
     }
 
     const accounts = await Promise.all(accountPromises)
 
-    const celoContract = await kit.celoTokens.contracts.getGoldToken()
-
-    const sendTransactionPromises: Promise<CeloTxReceipt>[] = []
-
     const amountOfCeloWei = kit.connection.web3.utils.toWei(
       amountOfCelo,
-      "ether",
+      "ether"
     )
 
     const amountOfCeloWeiWithExtraGas = kit.connection.web3.utils.toWei(
       (
         Number.parseFloat(amountOfCelo) +
-        Number.parseFloat(flags.gas ?? "0.001")
+        gas
       ).toString(),
-      "ether",
+      "ether"
     )
 
-    for (const account of accounts) {
-      const txObject = celoContract.transfer(
-        account.address,
-        amountOfCeloWeiWithExtraGas,
-      )
-      sendTransactionPromises.push(
-        txObject.sendAndWaitForReceipt({ from: primaryAccount }),
-      )
-      this.log(`Sending CELO to ${account.address}`)
-      kit.addAccount(account.privateKey)
-    }
+    const sendCeloTransactionResultPromises = accounts.map((a) => {
+      this.log(`Sending CELO to ${a.address}`)
+      kit.addAccount(a.privateKey)
 
-    await Promise.all(sendTransactionPromises)
+      return kit.sendTransaction({
+        to: a.address,
+        value: amountOfCeloWeiWithExtraGas,
+        from: primaryAccount,
+      })
+    })
+
+    const sendCeloTransactionResult = await Promise.all(
+      sendCeloTransactionResultPromises
+    )
+    await Promise.all(sendCeloTransactionResult.map((k) => k.waitReceipt()))
 
     const managerContract = getManagerContract(kit)
 
-    const depositPromises = []
-
-    for (const account of accounts) {
-      const txObject = await managerContract.methods.deposit()
-
-      const txDeposit = await kit.sendTransactionObject(txObject, {
-        from: account.address,
+    const txObject = managerContract.methods.deposit()
+    const depositTransactionPromises = accounts.map((a) => {
+      this.log(`Depositing ${amountOfCelo} CELO to ${a.address} for stCELO`)
+      return kit.sendTransactionObject(txObject, {
+        from: a.address,
         value: amountOfCeloWei,
       })
-      this.log(
-        `Depositing ${amountOfCelo} CELO to ${account.address} for stCELO`,
-      )
-      depositPromises.push(txDeposit.waitReceipt())
-    }
+    })
 
-    await Promise.all(depositPromises)
+    const depositTransactions = await Promise.all(depositTransactionPromises)
+    await Promise.all(depositTransactions.map((k) => k.waitReceipt()))
 
-    const withdrawalPromises = []
-
-    for (const account of accounts) {
-      withdrawalPromises.push(
-        withdrawStCelo(account.address, message => this.log(message)),
-      )
-    }
+    const withdrawalPromises = accounts.map((a) =>
+      withdrawStCelo(a.address, (message) => this.log(message))
+    )
 
     await Promise.all(withdrawalPromises)
 
-    await writeFile(`accounts_${network}_${countOfParallelism}_${amountOfCelo}CELO_${formatDate(new Date())}.json`, JSON.stringify(accounts))
+    await activateAndVote(message => this.log(message))
+
+    const now = new Date()
+    await writeFile(
+      `accounts_${network}_${countOfParallelism}_${amountOfCelo}CELO_${dateFormat(
+        now,
+        "yyyymmdd_hhMMss",
+      )}.json`,
+      JSON.stringify({
+        accounts,
+        timestamp: now.getTime(),
+        network: network,
+      } as FileContent),
+    )
 
     this.log("SUCCESS")
   }
