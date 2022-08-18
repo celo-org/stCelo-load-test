@@ -41,7 +41,7 @@ export default class Withdraw extends Command {
     }),
     gas: Flags.string({
       char: "g",
-      description: "extra amount of CELO to transfer to each account (as gas)",
+      description: "extra amount of CELO to transfer to each account (to cover gas fees)",
       default: "0.001",
     }),
   }
