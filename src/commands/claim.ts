@@ -12,7 +12,7 @@ export default class Claim extends Command {
   static description = "load test of claim"
 
   static examples = [
-    "load-test claim accounts_alfajores_10_0.01CELO_20220816_132253.json",
+    "load-test claim withdrawals_20220818_135645.json",
   ]
 
   static args = [{ name: "file", require: true }]
@@ -41,15 +41,15 @@ export default class Claim extends Command {
     const accountContract = getAccountContract(kit)
 
     const getPendingWithDrawalsCallsPromises = fileContent.accounts.map(
-      async (a) => {
-        kit.addAccount(a.privateKey)
+      async (account) => {
+        kit.addAccount(account.privateKey)
         const res = await accountContract.methods
-          .getPendingWithdrawals(a.address)
+          .getPendingWithdrawals(account.address)
           .call({
-            from: a.address,
+            from: account.address,
           })
         const highestTimestamp = [...res.timestamps].sort().slice(-1)[0]
-        return { ...res, address: a.address, highestTimestamp: new Date((highestTimestamp ?? 0) * 1000) }
+        return { ...res, address: account.address, highestTimestamp: highestTimestamp ?new Date(highestTimestamp * 1000) : undefined }
       },
     )
 
@@ -59,8 +59,8 @@ export default class Claim extends Command {
 
     const now = new Date()
     const accountsWithoutPendingWithdrawals = getPendingWithDrawalsCalls
-      .filter((r) => r.highestTimestamp > now)
-      .map((r) => r.address)
+      .filter((withdrawal) => withdrawal.highestTimestamp === undefined)
+      .map((withdrawal) => withdrawal.address)
 
     if (
       accountsWithoutPendingWithdrawals.length > 0
@@ -72,8 +72,22 @@ export default class Claim extends Command {
       throw new Error(msg)
     }
 
-    const claimPromises = fileContent.accounts.map((a) =>
-      claimCelo(a.address, (message) => this.log(message))
+    const accountsWithoutClaimableWithdrawals = getPendingWithDrawalsCalls
+      .filter((withdrawal) => withdrawal.highestTimestamp > now)
+      .map((withdrawal) => withdrawal.address)
+
+    if (
+      accountsWithoutClaimableWithdrawals.length > 0
+    ) {
+      const msg = `These accounts cannot claim stCELO since they have no claimable withdrawals ${JSON.stringify(
+        accountsWithoutClaimableWithdrawals
+      )}`
+      this.log(msg)
+      throw new Error(msg)
+    }
+
+    const claimPromises = fileContent.accounts.map((account) =>
+      claimCelo(account.address, (message) => this.log(message))
     )
 
     await Promise.all(claimPromises)

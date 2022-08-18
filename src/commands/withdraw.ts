@@ -2,7 +2,10 @@ import { Command, Flags } from "@oclif/core"
 import dateFormat from "dateformat"
 import { Account } from "web3-core"
 import { activateAndVote, withdrawStCelo } from "../helpers/backend-helper"
-import { getManagerContract, getStCeloContract } from "../helpers/contract-helpers"
+import {
+  getManagerContract,
+  getStCeloContract,
+} from "../helpers/contract-helpers"
 import {
   addKitAccount,
   checkBalance,
@@ -38,7 +41,7 @@ export default class Withdraw extends Command {
     }),
     gas: Flags.string({
       char: "g",
-      description: "extra amount of CELO to transfer to each account (as gas) ",
+      description: "extra amount of CELO to transfer to each account (as gas)",
       default: "0.001",
     }),
   }
@@ -46,15 +49,15 @@ export default class Withdraw extends Command {
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(Withdraw)
 
-    const countOfParallelism = Number.parseInt(flags.count ?? "10")
-    const amountOfCelo = flags.amount ?? "0.01"
-    const network = flags.network ?? "alfajores"
+    const countOfParallelism = Number.parseInt(flags.count)
+    const amountOfCelo = flags.amount
+    const network = flags.network
+    const gas = Number.parseFloat(flags.gas)
 
     setVariablesBasedOnCurrentNetwork(network)
 
     const kit = createKit()
     const primaryAccount = addKitAccount(kit, args.primaryKey)
-    const gas = Number.parseFloat(flags.gas ?? "0.001")
 
     this.log(`Network: ${network}`)
     this.log(`Count of parallel requests: ${countOfParallelism}`)
@@ -83,19 +86,16 @@ export default class Withdraw extends Command {
     )
 
     const amountOfCeloWeiWithExtraGas = kit.connection.web3.utils.toWei(
-      (
-        Number.parseFloat(amountOfCelo) +
-        gas
-      ).toString(),
+      (Number.parseFloat(amountOfCelo) + gas).toString(),
       "ether"
     )
 
-    const sendCeloTransactionResultPromises = accounts.map((a) => {
-      this.log(`Sending CELO to ${a.address}`)
-      kit.addAccount(a.privateKey)
+    const sendCeloTransactionResultPromises = accounts.map((account) => {
+      this.log(`Sending CELO to ${account.address}`)
+      kit.addAccount(account.privateKey)
 
       return kit.sendTransaction({
-        to: a.address,
+        to: account.address,
         value: amountOfCeloWeiWithExtraGas,
         from: primaryAccount,
       })
@@ -104,55 +104,56 @@ export default class Withdraw extends Command {
     const sendCeloTransactionResult = await Promise.all(
       sendCeloTransactionResultPromises
     )
-    await Promise.all(sendCeloTransactionResult.map((k) => k.waitReceipt()))
+    await Promise.all(sendCeloTransactionResult.map((transaction) => transaction.waitReceipt()))
 
     const managerContract = getManagerContract(kit)
 
     const txObject = managerContract.methods.deposit()
-    const depositTransactionPromises = accounts.map((a) => {
-      this.log(`Depositing ${amountOfCelo} CELO to ${a.address} for stCELO`)
+    const depositTransactionPromises = accounts.map((account) => {
+      this.log(`Depositing ${amountOfCelo} CELO to ${account.address} for stCELO`)
       return kit.sendTransactionObject(txObject, {
-        from: a.address,
+        from: account.address,
         value: amountOfCeloWei,
       })
     })
 
     const depositTransactions = await Promise.all(depositTransactionPromises)
-    await Promise.all(depositTransactions.map((k) => k.waitReceipt()))
+    await Promise.all(depositTransactions.map((transaction) => transaction.waitReceipt()))
 
     await activateAndVote((message) => this.log(message))
 
     const stCeloContract = getStCeloContract(kit)
 
-    const withdrawTransactionPromises = accounts.map(async (a) => {
-      const balanceOfStCelo = await stCeloContract.methods.balanceOf(a.address).call()
+    const withdrawTransactionPromises = accounts.map(async (account) => {
+      const balanceOfStCelo = await stCeloContract.methods
+        .balanceOf(account.address)
+        .call()
       const txObjectWithdraw = managerContract.methods.withdraw(balanceOfStCelo)
-      this.log(`Withdrawing ${balanceOfStCelo} stCELO to ${a.address} for CELO`)
+      this.log(`Withdrawing ${balanceOfStCelo} stCELO to ${account.address} for CELO`)
       return kit.sendTransactionObject(txObjectWithdraw, {
-        from: a.address,
+        from: account.address,
       })
     })
 
     const withdrawTransactions = await Promise.all(withdrawTransactionPromises)
-    await Promise.all(withdrawTransactions.map((k) => k.waitReceipt()))
+    await Promise.all(withdrawTransactions.map((transaction) => transaction.waitReceipt()))
 
-    const withdrawalBackendPromises = accounts.map((a) =>
-      withdrawStCelo(a.address, (message) => this.log(message))
+    const withdrawalBackendPromises = accounts.map((account) =>
+      withdrawStCelo(account.address, (message) => this.log(message))
     )
 
     await Promise.all(withdrawalBackendPromises)
 
     const now = new Date()
     await writeFile(
-      `accounts_${network}_${countOfParallelism}_${amountOfCelo}CELO_${dateFormat(
-        now,
-        "yyyymmdd_hhMMss",
-      )}.json`,
+      `withdrawals_${dateFormat(now, "yyyymmdd_HHMMss")}.json`,
       JSON.stringify({
         accounts,
         timestamp: now.getTime(),
         network: network,
-      } as FileContent),
+        amount: amountOfCelo,
+        gas: gas,
+      } as FileContent)
     )
 
     this.log("SUCCESS")
