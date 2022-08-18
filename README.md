@@ -1,6 +1,17 @@
 # load-test of stCelo backend
 
-Run withdrawal
+General stCelo flow
+
+1. Deposit
+1. ActivateAndVote (only need to be called once after all deposits)
+1. Manager.withdraw
+1. Backend withdraw
+1. Wait unlock period
+1. Backend claim
+
+## Run withdrawal
+
+(covers 1.-4.)
 
 ```
 USAGE
@@ -20,7 +31,9 @@ EXAMPLES
   $ load-test withdrawal <primary_key> -c 25
 ```
 
-Run claim
+## Run claim
+
+(covers 6.)
 
 ```
 USAGE
