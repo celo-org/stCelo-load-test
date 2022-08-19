@@ -3,6 +3,8 @@ import dateFormat from "dateformat"
 import { Account } from "web3-core"
 import { activateAndVote, withdrawStCelo } from "../helpers/backend-helper"
 import {
+  getAccountContractTransactions,
+  getAccountEventValues,
   getManagerContract,
   getStCeloContract,
 } from "../helpers/contract-helpers"
@@ -12,7 +14,9 @@ import {
   createAccount,
   createKit,
 } from "../helpers/kit-helpers"
-import { setVariablesBasedOnCurrentNetwork } from "../helpers/network-selector"
+import {
+  setVariablesBasedOnCurrentNetwork,
+} from "../helpers/network-selector"
 import { writeFile } from "node:fs/promises"
 import { FileContent } from "../interfaces/file-content"
 
@@ -41,7 +45,8 @@ export default class Withdraw extends Command {
     }),
     gas: Flags.string({
       char: "g",
-      description: "extra amount of CELO to transfer to each account (to cover gas fees)",
+      description:
+        "extra amount of CELO to transfer to each account (to cover gas fees)",
       default: "0.001",
     }),
   }
@@ -122,6 +127,15 @@ export default class Withdraw extends Command {
 
     await activateAndVote((message) => this.log(message))
 
+    const recentAccountContractTransactions = await getAccountContractTransactions(kit)
+    const wasActivateAndVoteCalled = recentAccountContractTransactions.some(tx => tx?.method === "activateAndVote")
+
+    if (!wasActivateAndVoteCalled) {
+      const msg = "ActivateAndVote was not called"
+      this.log(msg)
+      throw new Error(msg)
+    }
+
     const stCeloContract = getStCeloContract(kit)
 
     const withdrawTransactionPromises = accounts.map(async (account) => {
@@ -156,6 +170,18 @@ export default class Withdraw extends Command {
       } as FileContent)
     )
 
-    this.log("SUCCESS")
+    // Validate backend withdrawal events
+    const logs = await getAccountEventValues(kit, "CeloWithdrawalStarted")
+
+    const allAccountsWithWithdrawalEvent = new Set(logs.map(log => log.beneficiary))
+    const accountsWithoutBackendWithdrawalEvent = accounts.filter(account => !allAccountsWithWithdrawalEvent.has(account.address))
+    if (accountsWithoutBackendWithdrawalEvent.length > 0) {
+      const msg = `Following accounts don't have any withdrawal  ${JSON.stringify(accountsWithoutBackendWithdrawalEvent)}`
+      this.log(msg)
+      throw new Error(msg)
+    }
+
+    this
+      .log("SUCCESS")
   }
 }

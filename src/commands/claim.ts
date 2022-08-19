@@ -1,19 +1,15 @@
 import { Command, Flags } from "@oclif/core"
 import { claimCelo } from "../helpers/backend-helper"
-import {
-  setVariablesBasedOnCurrentNetwork,
-} from "../helpers/network-selector"
+import { setVariablesBasedOnCurrentNetwork } from "../helpers/network-selector"
 import { readFile } from "node:fs/promises"
 import { FileContent } from "../interfaces/file-content"
-import { getAccountContract } from "../helpers/contract-helpers"
+import { getAccountContract, getAccountEventValues } from "../helpers/contract-helpers"
 import { createKit } from "../helpers/kit-helpers"
 
 export default class Claim extends Command {
   static description = "load test of claim"
 
-  static examples = [
-    "load-test claim withdrawals_20220818_135645.json",
-  ]
+  static examples = ["load-test claim withdrawals_20220818_135645.json"]
 
   static args = [{ name: "file", require: true }]
 
@@ -49,8 +45,14 @@ export default class Claim extends Command {
             from: account.address,
           })
         const highestTimestamp = [...res.timestamps].sort().slice(-1)[0]
-        return { ...res, address: account.address, highestTimestamp: highestTimestamp ?new Date(highestTimestamp * 1000) : undefined }
-      },
+        return {
+          ...res,
+          address: account.address,
+          highestTimestamp: highestTimestamp
+            ? new Date(highestTimestamp * 1000)
+            : undefined,
+        }
+      }
     )
 
     const getPendingWithDrawalsCalls = await Promise.all(
@@ -62,9 +64,7 @@ export default class Claim extends Command {
       .filter((withdrawal) => withdrawal.highestTimestamp === undefined)
       .map((withdrawal) => withdrawal.address)
 
-    if (
-      accountsWithoutPendingWithdrawals.length > 0
-    ) {
+    if (accountsWithoutPendingWithdrawals.length > 0) {
       const msg = `These accounts cannot claim stCELO since they have no pending withdrawals ${JSON.stringify(
         accountsWithoutPendingWithdrawals
       )}`
@@ -76,9 +76,7 @@ export default class Claim extends Command {
       .filter((withdrawal) => withdrawal.highestTimestamp > now)
       .map((withdrawal) => withdrawal.address)
 
-    if (
-      accountsWithoutClaimableWithdrawals.length > 0
-    ) {
+    if (accountsWithoutClaimableWithdrawals.length > 0) {
       const msg = `These accounts cannot claim stCELO since they have no claimable withdrawals ${JSON.stringify(
         accountsWithoutClaimableWithdrawals
       )}`
@@ -91,6 +89,23 @@ export default class Claim extends Command {
     )
 
     await Promise.all(claimPromises)
+
+    // Validate backend claim events
+    const logs = await getAccountEventValues(kit, "CeloWithdrawalFinished")
+
+    const allAccountsWithWithdrawalEvent = new Set(
+      logs.map((log) => log.beneficiary)
+    )
+    const accountsWithoutBackendWithdrawalEvent = fileContent.accounts.filter(
+      (account) => !allAccountsWithWithdrawalEvent.has(account.address)
+    )
+    if (accountsWithoutBackendWithdrawalEvent.length > 0) {
+      const msg = `Following accounts don't have any claim  ${JSON.stringify(
+        accountsWithoutBackendWithdrawalEvent
+      )}`
+      this.log(msg)
+      throw new Error(msg)
+    }
 
     this.log("SUCCESS")
   }
