@@ -131,9 +131,7 @@ export default class Withdraw extends Command {
     const wasActivateAndVoteCalled = recentAccountContractTransactions.some(tx => tx?.method === "activateAndVote")
 
     if (!wasActivateAndVoteCalled) {
-      const msg = "ActivateAndVote was not called"
-      this.log(msg)
-      throw new Error(msg)
+      throw new Error("ActivateAndVote was not called")
     }
 
     const stCeloContract = getStCeloContract(kit)
@@ -176,9 +174,7 @@ export default class Withdraw extends Command {
     const allAccountsWithWithdrawalEvent = new Set(logs.map(log => log.beneficiary))
     const accountsWithoutBackendWithdrawalEvent = accounts.filter(account => !allAccountsWithWithdrawalEvent.has(account.address))
     if (accountsWithoutBackendWithdrawalEvent.length > 0) {
-      const msg = `Following accounts don't have any withdrawal  ${JSON.stringify(accountsWithoutBackendWithdrawalEvent)}`
-      this.log(msg)
-      throw new Error(msg)
+      throw new Error(`Following accounts don't have any withdrawal  ${JSON.stringify(accountsWithoutBackendWithdrawalEvent)}`)
     }
 
     this

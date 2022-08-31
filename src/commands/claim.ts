@@ -3,7 +3,10 @@ import { claimCelo } from "../helpers/backend-helper"
 import { setVariablesBasedOnCurrentNetwork } from "../helpers/network-selector"
 import { readFile } from "node:fs/promises"
 import { FileContent } from "../interfaces/file-content"
-import { getAccountContract, getAccountEventValues } from "../helpers/contract-helpers"
+import {
+  getAccountContract,
+  getAccountEventValues,
+} from "../helpers/contract-helpers"
 import { createKit } from "../helpers/kit-helpers"
 
 export default class Claim extends Command {
@@ -17,6 +20,7 @@ export default class Claim extends Command {
     network: Flags.string({
       char: "n",
       description: "CELO network - default alfajores",
+      default: "alfajores",
     }),
   }
 
@@ -26,27 +30,27 @@ export default class Claim extends Command {
     const accountsString = (await readFile(args.file)).toString()
     const fileContent = JSON.parse(accountsString) as FileContent
 
-    const network = flags.network ?? "alfajores"
-
-    setVariablesBasedOnCurrentNetwork(network)
+    setVariablesBasedOnCurrentNetwork(flags.network)
 
     const kit = createKit()
 
-    this.log(`Network: ${network}`)
+    this.log(`Network: ${flags.network}`)
 
     const accountContract = getAccountContract(kit)
 
     const getPendingWithDrawalsCallsPromises = fileContent.accounts.map(
       async (account) => {
         kit.addAccount(account.privateKey)
-        const res = await accountContract.methods
+        const pendingWithdrawals = await accountContract.methods
           .getPendingWithdrawals(account.address)
           .call({
             from: account.address,
           })
-        const highestTimestamp = [...res.timestamps].sort().slice(-1)[0]
+        const highestTimestamp = [...pendingWithdrawals.timestamps]
+          .sort()
+          .slice(-1)[0]
         return {
-          ...res,
+          ...pendingWithdrawals,
           address: account.address,
           highestTimestamp: highestTimestamp
             ? new Date(highestTimestamp * 1000)
@@ -65,11 +69,11 @@ export default class Claim extends Command {
       .map((withdrawal) => withdrawal.address)
 
     if (accountsWithoutPendingWithdrawals.length > 0) {
-      const msg = `These accounts cannot claim stCELO since they have no pending withdrawals ${JSON.stringify(
-        accountsWithoutPendingWithdrawals
-      )}`
-      this.log(msg)
-      throw new Error(msg)
+      throw new Error(
+        `These accounts cannot claim stCELO since they have no pending withdrawals ${JSON.stringify(
+          accountsWithoutPendingWithdrawals,
+        )}`,
+      )
     }
 
     const accountsWithoutClaimableWithdrawals = getPendingWithDrawalsCalls
@@ -77,11 +81,9 @@ export default class Claim extends Command {
       .map((withdrawal) => withdrawal.address)
 
     if (accountsWithoutClaimableWithdrawals.length > 0) {
-      const msg = `These accounts cannot claim stCELO since they have no claimable withdrawals ${JSON.stringify(
+      throw new Error(`These accounts cannot claim stCELO since they have no claimable withdrawals ${JSON.stringify(
         accountsWithoutClaimableWithdrawals
-      )}`
-      this.log(msg)
-      throw new Error(msg)
+      )}`)
     }
 
     const claimPromises = fileContent.accounts.map((account) =>
@@ -100,11 +102,9 @@ export default class Claim extends Command {
       (account) => !allAccountsWithWithdrawalEvent.has(account.address)
     )
     if (accountsWithoutBackendWithdrawalEvent.length > 0) {
-      const msg = `Following accounts don't have any claim  ${JSON.stringify(
+      throw new Error(`Following accounts don't have any claim  ${JSON.stringify(
         accountsWithoutBackendWithdrawalEvent
-      )}`
-      this.log(msg)
-      throw new Error(msg)
+      )}`)
     }
 
     this.log("SUCCESS")

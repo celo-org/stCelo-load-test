@@ -2,11 +2,11 @@
   "name": "load-test",
   "version": "0.0.1",
   "description": "load-test of staked celo",
-  "author": "pahor167",
+  "author": "cLabs",
   "bin": {
     "load-test": "./bin/run"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "main": "dist/index.js",
   "repository": "https://github.com/celo-org/stCelo-load-test",
   "files": [
@@ -67,7 +67,6 @@
   "engines": {
     "node": ">=12.0.0"
   },
-  "bugs": "https://github.com/cli/hello-world/issues",
   "keywords": [
     "oclif"
   ],
