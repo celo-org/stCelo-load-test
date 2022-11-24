@@ -88,6 +88,7 @@ export class ASTContractVersionsChecker {
    */
   excluding = (exclude: RegExp): ASTContractVersionsChecker => {
     const included = (contract: string): boolean => {
+      // eslint-disable-next-line no-eq-null, eqeqeq
       if (exclude != null) {
         return !exclude.test(contract)
       }

@@ -44,7 +44,7 @@ export class ASTBackwardReport {
     return new ASTBackwardReport(
       oldArtifactsFolder,
       newArtifactsFolder,
-      exclude.toString(),
+      exclude?.toString(),
       versionedReport)
   }
 
