@@ -28,8 +28,11 @@ FLAGS
 
 
 EXAMPLES
-  $ load-test withdrawal <primary_key> -c 25
+  $ load-test withdraw <primary_key> -c 25
 ```
+
+If running locally, use
+```./bin/run withdraw <private_Key>``` instead.
 
 ## Run claim
 
@@ -49,3 +52,6 @@ FLAGS
 EXAMPLES
   $ load-test claim accounts_alfajores_10_0.01CELO_20220816_132253.json
 ```
+
+If running locally, use
+```./bin/run claim <private_Key>``` instead.
