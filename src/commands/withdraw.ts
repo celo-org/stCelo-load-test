@@ -23,7 +23,7 @@ import { FileContent } from "../interfaces/file-content"
 export default class Withdraw extends Command {
   static description = "load test of withdrawal"
 
-  static examples = ["load-test withdrawal <primary_key> -c 25"]
+  static examples = ["load-test withdraw <primary_key> -c 25"]
 
   static args = [{ name: "primaryKey", require: true }]
 
@@ -47,7 +47,7 @@ export default class Withdraw extends Command {
       char: "g",
       description:
         "extra amount of CELO to transfer to each account (to cover gas fees)",
-      default: "0.001",
+      default: "0.03",
     }),
   }
 
