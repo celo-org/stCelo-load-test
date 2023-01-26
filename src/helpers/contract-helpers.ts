@@ -73,7 +73,7 @@ export async function getAccountContractTransactions(
 
   const decoder = new InputDataDecoder(accountContractData.abi)
 
-  const transactionsFromContractPromises = Array(to - from)
+  const transactionsFromContractPromises = Array(to + 1 - from) // +1 to include the latest block.
     .fill(from)
     .map((value, index) => value + index)
     .map(async (blockNumber) => {
