@@ -74,28 +74,28 @@ export default class Withdraw extends Command {
       kit,
       primaryAccount,
       Number.parseFloat(amountOfCelo + gas) * countOfParallelism,
-      (message) => this.log(message)
+      message => this.log(message),
     )
 
     const accountPromises: Promise<Account>[] = []
 
     for (let i = 0; i < countOfParallelism; i++) {
-      accountPromises.push(createAccount(kit, (message) => this.log(message)))
+      accountPromises.push(createAccount(kit, message => this.log(message)))
     }
 
     const accounts = await Promise.all(accountPromises)
 
     const amountOfCeloWei = kit.connection.web3.utils.toWei(
       amountOfCelo,
-      "ether"
+      "ether",
     )
 
     const amountOfCeloWeiWithExtraGas = kit.connection.web3.utils.toWei(
       (Number.parseFloat(amountOfCelo) + gas).toString(),
-      "ether"
+      "ether",
     )
 
-    const sendCeloTransactionResultPromises = accounts.map((account) => {
+    const sendCeloTransactionResultPromises = accounts.map(account => {
       this.log(`Sending CELO to ${account.address}`)
       kit.addAccount(account.privateKey)
 
@@ -107,14 +107,14 @@ export default class Withdraw extends Command {
     })
 
     const sendCeloTransactionResult = await Promise.all(
-      sendCeloTransactionResultPromises
+      sendCeloTransactionResultPromises,
     )
-    await Promise.all(sendCeloTransactionResult.map((transaction) => transaction.waitReceipt()))
+    await Promise.all(sendCeloTransactionResult.map(transaction => transaction.waitReceipt()))
 
     const managerContract = getManagerContract(kit)
 
     const txObject = managerContract.methods.deposit()
-    const depositTransactionPromises = accounts.map((account) => {
+    const depositTransactionPromises = accounts.map(account => {
       this.log(`Depositing ${amountOfCelo} CELO to ${account.address} for stCELO`)
       return kit.sendTransactionObject(txObject, {
         from: account.address,
@@ -123,9 +123,9 @@ export default class Withdraw extends Command {
     })
 
     const depositTransactions = await Promise.all(depositTransactionPromises)
-    await Promise.all(depositTransactions.map((transaction) => transaction.waitReceipt()))
+    await Promise.all(depositTransactions.map(transaction => transaction.waitReceipt()))
 
-    await activateAndVote((message) => this.log(message))
+    await activateAndVote(message => this.log(message))
 
     const recentAccountContractTransactions = await getAccountContractTransactions(kit)
     const wasActivateAndVoteCalled = recentAccountContractTransactions.some(tx => tx?.method === "activateAndVote")
@@ -136,7 +136,7 @@ export default class Withdraw extends Command {
 
     const stCeloContract = getStCeloContract(kit)
 
-    const withdrawTransactionPromises = accounts.map(async (account) => {
+    const withdrawTransactionPromises = accounts.map(async account => {
       const balanceOfStCelo = await stCeloContract.methods
         .balanceOf(account.address)
         .call()
@@ -148,10 +148,10 @@ export default class Withdraw extends Command {
     })
 
     const withdrawTransactions = await Promise.all(withdrawTransactionPromises)
-    await Promise.all(withdrawTransactions.map((transaction) => transaction.waitReceipt()))
+    await Promise.all(withdrawTransactions.map(transaction => transaction.waitReceipt()))
 
-    const withdrawalBackendPromises = accounts.map((account) =>
-      withdrawStCelo(account.address, (message) => this.log(message))
+    const withdrawalBackendPromises = accounts.map(account =>
+      withdrawStCelo(account.address, message => this.log(message)),
     )
 
     await Promise.all(withdrawalBackendPromises)
@@ -165,7 +165,7 @@ export default class Withdraw extends Command {
         network: network,
         amount: amountOfCelo,
         gas: gas,
-      } as FileContent)
+      } as FileContent),
     )
 
     // Validate backend withdrawal events

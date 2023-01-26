@@ -39,7 +39,7 @@ export default class Claim extends Command {
     const accountContract = getAccountContract(kit)
 
     const getPendingWithDrawalsCallsPromises = fileContent.accounts.map(
-      async (account) => {
+      async account => {
         kit.addAccount(account.privateKey)
         const pendingWithdrawals = await accountContract.methods
           .getPendingWithdrawals(account.address)
@@ -52,21 +52,21 @@ export default class Claim extends Command {
         return {
           ...pendingWithdrawals,
           address: account.address,
-          highestTimestamp: highestTimestamp
-            ? new Date(highestTimestamp * 1000)
-            : undefined,
+          highestTimestamp: highestTimestamp ?
+            new Date(highestTimestamp * 1000) :
+            undefined,
         }
-      }
+      },
     )
 
     const getPendingWithDrawalsCalls = await Promise.all(
-      getPendingWithDrawalsCallsPromises
+      getPendingWithDrawalsCallsPromises,
     )
 
     const now = new Date()
     const accountsWithoutPendingWithdrawals = getPendingWithDrawalsCalls
-      .filter((withdrawal) => withdrawal.highestTimestamp === undefined)
-      .map((withdrawal) => withdrawal.address)
+      .filter(withdrawal => withdrawal.highestTimestamp === undefined)
+      .map(withdrawal => withdrawal.address)
 
     if (accountsWithoutPendingWithdrawals.length > 0) {
       throw new Error(
@@ -77,17 +77,17 @@ export default class Claim extends Command {
     }
 
     const accountsWithoutClaimableWithdrawals = getPendingWithDrawalsCalls
-      .filter((withdrawal) => withdrawal.highestTimestamp > now)
-      .map((withdrawal) => withdrawal.address)
+      .filter(withdrawal => withdrawal.highestTimestamp > now)
+      .map(withdrawal => withdrawal.address)
 
     if (accountsWithoutClaimableWithdrawals.length > 0) {
       throw new Error(`These accounts cannot claim stCELO since they have no claimable withdrawals ${JSON.stringify(
-        accountsWithoutClaimableWithdrawals
+        accountsWithoutClaimableWithdrawals,
       )}`)
     }
 
-    const claimPromises = fileContent.accounts.map((account) =>
-      claimCelo(account.address, (message) => this.log(message))
+    const claimPromises = fileContent.accounts.map(account =>
+      claimCelo(account.address, message => this.log(message)),
     )
 
     await Promise.all(claimPromises)
@@ -96,14 +96,14 @@ export default class Claim extends Command {
     const logs = await getAccountEventValues(kit, "CeloWithdrawalFinished")
 
     const allAccountsWithWithdrawalEvent = new Set(
-      logs.map((log) => log.beneficiary)
+      logs.map(log => log.beneficiary),
     )
     const accountsWithoutBackendWithdrawalEvent = fileContent.accounts.filter(
-      (account) => !allAccountsWithWithdrawalEvent.has(account.address)
+      account => !allAccountsWithWithdrawalEvent.has(account.address),
     )
     if (accountsWithoutBackendWithdrawalEvent.length > 0) {
       throw new Error(`Following accounts don't have any claim  ${JSON.stringify(
-        accountsWithoutBackendWithdrawalEvent
+        accountsWithoutBackendWithdrawalEvent,
       )}`)
     }
 
