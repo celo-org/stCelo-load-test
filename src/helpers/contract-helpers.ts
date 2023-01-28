@@ -51,7 +51,7 @@ export async function getAccountEventValues(
   toBlock?: number,
 ) {
   const latestBlock = await kit.web3.eth.getBlockNumber()
-  const blockFiveMinutesAgo = (latestBlock - 12) * 5 // 12 blocks per minute * 5 minutes
+  const blockFiveMinutesAgo = latestBlock - (12 * 5) // 12 blocks per minute * 5 minutes
   const accountContract = getAccountContract(kit)
   const logs = await accountContract.getPastEvents(eventName, {
     fromBlock: fromBlock ?? blockFiveMinutesAgo,
@@ -66,14 +66,14 @@ export async function getAccountContractTransactions(
   toBlock?: number,
 ) {
   const latestBlock = await kit.web3.eth.getBlockNumber()
-  const blockFiveMinutesAgo = (latestBlock - 12) * 5 // 12 blocks per minute * 5 minutes
+  const blockFiveMinutesAgo = latestBlock - (12 * 5) // 12 blocks per minute * 5 minutes
 
   const from = fromBlock ?? blockFiveMinutesAgo
   const to = toBlock ?? latestBlock
 
   const decoder = new InputDataDecoder(accountContractData.abi)
-
-  const transactionsFromContractPromises = new Array(to + 1 - from) // +1 to include the latest block.
+  const arrayLength = to + 1 - from // +1 to include the latest block.
+  const transactionsFromContractPromises = new Array(arrayLength) 
     .fill(from)
     .map((value, index) => value + index)
     .map(async blockNumber => {
@@ -83,7 +83,6 @@ export async function getAccountContractTransactions(
 
         if (tx.to === networkSettings.accountContractAddress) {
           const decoded = decoder.decodeData(tx.input)
-
           const values = {} as Record<string, any>
           for (let i = 0; i < decoded.names.length; i++) {
             const name = decoded.names[i] as string
