@@ -39,16 +39,16 @@ export async function checkBalance(
   kit: ContractKit,
   address: string,
   minimumBalance: number,
-  log: (message?: string) => void
+  log: (message?: string) => void,
 ) {
   const totalBalances = await kit.getTotalBalance(address)
   const threshold = kit.web3.utils.toWei(
-    kit.web3.utils.toBN(minimumBalance * 1000).div(kit.web3.utils.toBN("1000"))
+    kit.web3.utils.toBN(minimumBalance * 1000).div(kit.web3.utils.toBN("1000")),
   )
 
   if (totalBalances.CELO?.lt(threshold.toString())) {
     const msg = `Account balance low: ${kit.web3.utils.fromWei(
-      totalBalances.CELO.toString()
+      totalBalances.CELO.toString(),
     )} CELO expected: ${minimumBalance} CELO`
     log(msg)
     throw new Error(msg)

@@ -54,4 +54,4 @@ EXAMPLES
 ```
 
 If running locally, use
-```./bin/run claim <private_Key>``` instead.
+```./bin/run claim <FILENAME>``` instead.

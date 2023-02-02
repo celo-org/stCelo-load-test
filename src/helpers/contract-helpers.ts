@@ -9,38 +9,38 @@ import InputDataDecoder from "ethereum-input-data-decoder"
 export function getAccountContract(kit: ContractKit) {
   return new kit.web3.eth.Contract(
     accountContractData.abi as any,
-    networkSettings.accountContractAddress
+    networkSettings.accountContractAddress,
   )
 }
 
 export function getManagerContract(kit: ContractKit) {
   return new kit.web3.eth.Contract(
     managerContractData.abi as any,
-    networkSettings.managerContractAddress
+    networkSettings.managerContractAddress,
   )
 }
 
 export function getElectionContract(
   kit: ContractKit,
-  electionContractAddress: string
+  electionContractAddress: string,
 ) {
   return new kit.web3.eth.Contract(
     electionContractData.abi as any,
-    electionContractAddress
+    electionContractAddress,
   )
 }
 
 export function getCeloContract(kit: ContractKit) {
   return new kit.web3.eth.Contract(
     electionContractData.abi as any,
-    networkSettings.celoContractAddress
+    networkSettings.celoContractAddress,
   )
 }
 
 export function getStCeloContract(kit: ContractKit) {
   return new kit.web3.eth.Contract(
     stCeloContractData.abi as any,
-    networkSettings.stCeloContractAddress
+    networkSettings.stCeloContractAddress,
   )
 }
 
@@ -48,42 +48,41 @@ export async function getAccountEventValues(
   kit: ContractKit,
   eventName: string,
   fromBlock?: number,
-  toBlock?: number
+  toBlock?: number,
 ) {
   const latestBlock = await kit.web3.eth.getBlockNumber()
-  const blockFiveMinutesAgo = latestBlock - 12 * 5 // 12 blocks per minute * 5 minutes
+  const blockFiveMinutesAgo = latestBlock - (12 * 5) // 12 blocks per minute * 5 minutes
   const accountContract = getAccountContract(kit)
   const logs = await accountContract.getPastEvents(eventName, {
     fromBlock: fromBlock ?? blockFiveMinutesAgo,
     toBlock: toBlock ?? latestBlock,
   })
-  return logs.map((log) => log.returnValues)
+  return logs.map(log => log.returnValues)
 }
 
 export async function getAccountContractTransactions(
   kit: ContractKit,
   fromBlock?: number,
-  toBlock?: number
+  toBlock?: number,
 ) {
   const latestBlock = await kit.web3.eth.getBlockNumber()
-  const blockFiveMinutesAgo = latestBlock - 12 * 5 // 12 blocks per minute * 5 minutes
+  const blockFiveMinutesAgo = latestBlock - (12 * 5) // 12 blocks per minute * 5 minutes
 
   const from = fromBlock ?? blockFiveMinutesAgo
   const to = toBlock ?? latestBlock
 
   const decoder = new InputDataDecoder(accountContractData.abi)
-
-  const transactionsFromContractPromises = Array(to - from)
+  const arrayLength = to + 1 - from // +1 to include the latest block.
+  const transactionsFromContractPromises = new Array(arrayLength) 
     .fill(from)
     .map((value, index) => value + index)
-    .map(async (blockNumber) => {
+    .map(async blockNumber => {
       const block = await kit.web3.eth.getBlock(blockNumber)
-      const transactionPromises = block.transactions.map(async (txHash) => {
+      const transactionPromises = block.transactions.map(async txHash => {
         const tx = await kit.web3.eth.getTransaction(txHash)
 
         if (tx.to === networkSettings.accountContractAddress) {
           const decoded = decoder.decodeData(tx.input)
-
           const values = {} as Record<string, any>
           for (let i = 0; i < decoded.names.length; i++) {
             const name = decoded.names[i] as string
@@ -102,11 +101,11 @@ export async function getAccountContractTransactions(
         return null
       })
       const transactions = await Promise.all(transactionPromises)
-      return transactions.filter((tx) => tx)
+      return transactions.filter(tx => tx)
     })
 
   const transactionsFromContract = await Promise.all(
-    transactionsFromContractPromises
+    transactionsFromContractPromises,
   )
 
   return transactionsFromContract.flat()
